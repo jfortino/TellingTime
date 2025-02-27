@@ -57,6 +57,10 @@
 /* USER CODE BEGIN PV */
 #ifdef DEBUG_TERMINAL
 uint8_t rx_buffer[2];
+#ifdef VIBRATION
+char morse_buffer[14];
+uint8_t morse_rx_flag = 0;
+#endif
 #endif
 /* USER CODE END PV */
 
@@ -73,50 +77,68 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart == &huart1)
     {
-    	switch(*((uint16_t*)rx_buffer))
+		#ifdef VIBRATION
+    	if (morse_rx_flag)
     	{
-			#ifdef DATE_TIME
-    		case 0x4954:	// Tell Time
-    			HAL_UART_Transmit(&huart1, "Time\r\n", 7, 1000);
-				break;
-    		case 0x4144:	// Tell Date
-    			HAL_UART_Transmit(&huart1, "Date\r\n", 7, 1000);
-    			break;
-			#endif
-
-    		#ifdef HEART_RATE_MEASURE
-    		case 0x5248:	// Heart Rate
-    			HAL_UART_Transmit(&huart1, "Heart Rate\r\n", 13, 1000);
-    		    break;
-			#endif
-
-			#ifdef PULSE_OX_MEASURE
-    		case 0x4F50:	// Pulse Ox
-    			HAL_UART_Transmit(&huart1, "Pulse Ox\r\n", 11, 1000);
-    			break;
-			#endif
-
-    		case 0x5556:	// Volume Up
-    			HAL_UART_Transmit(&huart1, "Volume Up\r\n", 12, 1000);
-    			break;
-    		case 0x4456:	// Volume Down
-    			HAL_UART_Transmit(&huart1, "Volume Down\r\n", 13, 1000);
-    			break;
-    		case 0x5541:	// Arrow Up
-    			HAL_UART_Transmit(&huart1, "Arrow Up\r\n", 11, 1000);
-    			break;
-    		case 0x4441:	// Arrow Down
-    			HAL_UART_Transmit(&huart1, "Arrow Down\r\n", 13, 1000);
-    			break;
-    		case 0x4553:	// Select
-    			HAL_UART_Transmit(&huart1, "Select\r\n", 9, 1000);
-    			break;
-
-    		default:
-    			break;
+    		morse_rx_flag = 0;
+    		MorseFSM_Prime((const char*) morse_buffer);
+    		HAL_TIM_Base_Start_IT(&htim21);
     	}
+    	else
+    	{
+		#endif
+			switch(*((uint16_t*)rx_buffer))
+			{
+				#ifdef DATE_TIME
+				case 0x4954:	// Tell Time (TI)
+					HAL_UART_Transmit(&huart1, "Time\r\n", 7, 1000);
+					break;
+				case 0x4144:	// Tell Date (DA)
+					HAL_UART_Transmit(&huart1, "Date\r\n", 7, 1000);
+					break;
+				#endif
 
-    	memset(rx_buffer, 0, sizeof(rx_buffer));	// Clears the RX buffer
+				#ifdef HEART_RATE_MEASURE
+				case 0x5248:	// Heart Rate (HR)
+					HAL_UART_Transmit(&huart1, "Heart Rate\r\n", 13, 1000);
+					break;
+				#endif
+
+				#ifdef PULSE_OX_MEASURE
+				case 0x4F50:	// Pulse Ox (PO)
+					HAL_UART_Transmit(&huart1, "Pulse Ox\r\n", 11, 1000);
+					break;
+				#endif
+
+				case 0x5556:	// Volume Up (VU)
+					HAL_UART_Transmit(&huart1, "Volume Up\r\n", 12, 1000);
+					break;
+				case 0x4456:	// Volume Down (VD)
+					HAL_UART_Transmit(&huart1, "Volume Down\r\n", 13, 1000);
+					break;
+				case 0x5541:	// Arrow Up (AU)
+					HAL_UART_Transmit(&huart1, "Arrow Up\r\n", 11, 1000);
+					break;
+				case 0x4441:	// Arrow Down (AD)
+					HAL_UART_Transmit(&huart1, "Arrow Down\r\n", 13, 1000);
+					break;
+				case 0x4553:	// Select (SE)
+					HAL_UART_Transmit(&huart1, "Select\r\n", 9, 1000);
+					break;
+				case 0x4F4D:	// Morse (MO)
+					HAL_UART_Transmit(&huart1, "Morse\r\n", 8, 1000);
+					HAL_UART_Receive_IT(&huart1, morse_buffer, 14);
+					morse_rx_flag = 1;
+					break;
+
+				default:
+					break;
+			}
+
+			memset(rx_buffer, 0, sizeof(rx_buffer));	// Clears the RX buffer
+		#ifdef VIBRATION
+    	}
+		#endif
     }
 }
 #endif
@@ -191,8 +213,6 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM21_Init();
   /* USER CODE BEGIN 2 */
-  MorseFSM_Prime(". .-- ... .--");
-  HAL_TIM_Base_Start_IT(&htim21);
   //uint8_t test_data = 0x12;
   /* USER CODE END 2 */
 
@@ -203,11 +223,18 @@ int main(void)
 	  //HAL_UART_Receive(&huart1, usart_buf, 256, 1000);
 	  //HAL_I2C_Master_Transmit(&hi2c1, 84, (unsigned char*) "Hello World!", 12, 2000);
 	  //HAL_UART_Transmit(&huart1, usart_buf, 256, 1000);
-	  /*
+
 	  #ifdef DEBUG_TERMINAL
-	  HAL_UART_Receive_IT(&huart1, rx_buffer, 2);
+	  #ifdef VIBRATION
+	  if (!morse_rx_flag)
+	  {
 	  #endif
-	  */
+	  	  HAL_UART_Receive_IT(&huart1, rx_buffer, 2);
+	  #ifdef VIBRATION
+	  }
+	  #endif
+	  #endif
+
 
 	  //HAL_SPI_Transmit(&hspi1, &test_data, 1, 1000);
 	  //HAL_GPIO_TogglePin(GPIOA, VIB_CTRL_Pin);
