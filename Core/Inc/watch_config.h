@@ -10,6 +10,10 @@
 
 //================================================User Feedback===============================================
 #define SPEAKER
+#ifdef SPEAKER
+#define AUDIO_FILE_SIZE 1600		// The number of bytes per audio file
+#define AUDIO_BUFFER_SIZE 1600		// The number of bytes per audio buffer
+#endif
 
 #define VIBRATION
 #ifdef VIBRATION
@@ -44,6 +48,6 @@
 //====================================================Misc====================================================
 //#define LOW_POWER_ENABLED
 #define DEBUG_TERMINAL
-
+#define SPI_FLASH_TIMEOUT 100
 
 #endif /* INC_WATCH_CONFIG_H_ */
