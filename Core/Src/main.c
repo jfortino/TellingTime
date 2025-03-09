@@ -35,6 +35,8 @@
 #ifdef VIBRATION
 #include "morse_driver.h"
 #endif
+#include "tusb.h"
+#include "W25Q128JV_driver.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -223,6 +225,7 @@ int main(void)
 	  //HAL_UART_Receive(&huart1, usart_buf, 256, 1000);
 	  //HAL_I2C_Master_Transmit(&hi2c1, 84, (unsigned char*) "Hello World!", 12, 2000);
 	  //HAL_UART_Transmit(&huart1, usart_buf, 256, 1000);
+	  tud_task();
 
 	  #ifdef DEBUG_TERMINAL
 	  #ifdef VIBRATION
