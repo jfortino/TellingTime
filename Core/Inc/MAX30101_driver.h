@@ -2,119 +2,104 @@
  *  MAX30101_driver.h
  *
  *  Created on: Mar 20, 2025
- *  Author: Joseph Fortino
- *  GruntWorker: tara black
+ *  Author: Tara Black
+ *  Reviewer: Joseph Fortino
  *  Adapted from: W25Q128JV_driver.h
  */
 
-
 #ifndef INC_MAX30101_DRIVER_H_
 #define INC_MAX30101_DRIVER_H_
-#include <stdint.h>
-#include "spi.h"
 
 #define INSTR_SIZE (1) //copied from flash diver
 #define ADDR_SIZE (3) // copied from flash driver
 
-// Register Addresses
-#define	INTR_STATUS_1 (0x00)
-#define	INTR_STATUS_2 (0x01)
-#define	INTR_EN_1 (0x02)
-#define	INTR_EN_2 (0x03)
-#define	FIFO_WR_PNTR (0x04)
-#define	OVERFLOW_COUNTER (0x05)
-#define	FIFO_RD_PNTR (0x06)
+// STATUS REGISTERS
+#define	INT_STATUS_1 (0x00)
+#define	INT_STATUS_2 (0x01)
+#define	INT_EN_1 (0x02)
+#define	INT_EN_2 (0x03)
+
+// FIFO REGISTERS
+#define	FIFO_WR_PTR (0x04)
+#define	OVF_CTR (0x05)
+#define	FIFO_RD_PTR (0x06)
 #define	FIFO_DATA_REG (0x07)
+
+// CONFIG REGISTERS
 #define	FIFO_CONFIG (0x08)
 #define	MODE_CONFIG (0x09)
 #define	SPO2_CONFIG (0x0A)
-
 // Reserved registers: (0x0B) POR_STATE 0x00 R/W
-//LED PULSE AMPLITUDE
-#define	LED1_PA (0x0C)//i feel dubious about these
+
+// LED PULSE AMPLITUDE REGISTERS
+#define	LED1_PA (0x0C)
 #define	LED2_PA (0x0D)
 #define LED3_PA (0x0E)
 #define LED4_PA (0x0F)
 
-//MULTI-LED MODE CONTROL REGISTERS
-#define SLOT2_1 (0x11)//i feel dubious about these
-#define SLOT4_3 (0x12)
+// MULTI-LED MODE CONTROL REGISTERS
+#define SLOT_2_1 (0x11)
+#define SLOT_4_3 (0x12)
+// Reserved registers: 0x13-0x17 POR_STATE 0xFF R/W
+// Reserved registers: 0x18-0x1e POR_STATE 0x00 R
 
-//Reserved registers: 0x13-0x17 POR_STATE 0xFF R/W
-//Reserved registers: 0x18-0x1e POR_STATE 0x00 R
+// DIE TEMPERATURE REGISTERS
 #define DIE_TEMP_INTEGER (0x1F)
 #define DIE_TEMP_FRACTION (0x20)
 #define DIE_TEMP_CONFIG (0x21)
-//Reserved registers: 0x22-0x2F POR_STATE 0x00 R/W
+// Reserved registers: 0x22-0x2F POR_STATE 0x00 R/W
+
+// PART ID REGISTERS
+#define REV_ID (0xFE)
 #define PART_ID (0xFF) //POR_STATE 0x15 R
 
 
 
-// SR1 Bit Masks
-#define BUSY_MASK (0x01)
-#define WEL_MASK (0x02)
-#define BP_MASK (0x1C)
-#define TB_MASK (0x20)
-#define SEC_MASK (0x40)
-#define SRP_MASK (0x80)
+// INT_STATUS_1 Bit Masks
+#define PWR_RDY_MASK (0x01)
+#define ALC_OVF_MASK (0x20)
+#define PPG_RDY_MASK (0x40)
+#define A_FULL_MASK (0x80)
 
-// SR2 Bit Masks
-#define SRL_MASK (0x01)
-#define QE_MASK (0x02)
-#define R_MASK (0x04)
-#define LB_MASK (0x38)
-#define CMP_MASK (0x40)
-#define SUS_MASK (0x80)
+// INT_STATUS_2 Bit Masks
+#define DIE_TEMP_RDY_MASK (0x02)
 
-// SR3 Bit Masks
-#define WPS_MASK (0x04)
-#define DVR_MASK (0x60)
-#define HOLD_RST_MASK (0x80)
+// FIFO Bit Masks
+#define FIFO_WR_PTR_MASK (0x1F)
+#define OVF_CTR_MASK (0x1F)
+#define FIFO_RD_PTR_MASK (0x1F)
+
+// CONFIG Bit Masks
+// FIFO
+#define FIFO_A_FULL_MASK (0x0F)
+#define FIFO_ROLL_OVER_EN_MASK (0x10)
+#define SMP_AVE_MASK (0xE0)
+// Mode
+#define MODE_MASK (0x07)
+#define RESET_MASK (0x40)
+#define SHDN_MASK (0x80)
+// SP02
+#define LED_PW_MASK (0x03)
+#define SP02_SR_MASK (0x1C)
+#define SP02_ADC_RGE_MASK (0x60)
+
+// MULTI-LED MODE Bit Masks
+#define SLOT_1_MASK (0x07)
+#define SLOT_2_MASK (0x70)
+#define SLOT_3_MASK (0x07)
+#define SLOT_4_MASK (0x70)
+
+// DIE TEMPERATURE Bit Masks
+#define TFRAC_MASK (0x0F)
+#define TEMP_EN_MASK (0x01)
 
 
 typedef enum
 {
-  FLASH_OK       = 0x00,
-  FLASH_ERROR    = 0x01,
-  FLASH_BUSY     = 0x02
-  //FLASH_TIMEOUT  = 0x03
-} EFlashStatus;
+  SP02_OK,
+  SP02_ERROR
+} ESP02Status;
 
-typedef enum
-{
-	SECTOR_4KB,
-	BLOCK_64KB,
-	BLOCK_32KB,
-	CHIP
-} EFlashEraseType;
-
-EFlashStatus Flash_Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
-EFlashStatus Flash_IsBusy();
-//EFlashStatus Flash_WriteEnable();
-//EFlashStatus Flash_VolatileSRWriteEnable();
-//EFlashStatus Flash_WriteDisable();
-EFlashStatus Flash_ReleasePowerDown();
-//EFlashStatus Flash_DeviceID();
-EFlashStatus Flash_ReadData(uint32_t addr, uint8_t* data, uint16_t size);
-//EFlashStatus Flash_FastRead();
-EFlashStatus Flash_PageProgram(uint32_t addr, uint8_t* data, uint16_t size);
-EFlashStatus Flash_Erase(uint32_t addr, EFlashEraseType erase_type);
-//EFlashStatus Flash_ReadSR(uint8_t sr_num);
-//EFlashStatus Flash_WriteSR(uint8_t sr_num);
-//EFlashStatus Flash_ReadSFDPRegister();
-//EFlashStatus Flash_EraseSecurityRegister();
-//EFlashStatus Flash_ProgramSecurityRegister();
-//EFlashStatus Flash_ReadSecurityRegister();
-//EFlashStatus Flash_GlobalBlockLock();
-//EFlashStatus Flash_GlobalBlockUnlock();
-//EFlashStatus Flash_ReadBlockLock();
-//EFlashStatus Flash_IndividualBlockLock();
-//EFlashStatus Flash_IndividualBlockUnlock();
-//EFlashStatus Flash_EraseProgramSuspend();
-//EFlashStatus Flash_EraseProgramResume();
-EFlashStatus Flash_PowerDown();
-//EFlashStatus Flash_EnableReset();
-EFlashStatus Flash_ResetDevice();
-
+EFlashStatus SP02_Init(I2C_HandleTypeDef* hi2c);
 
 #endif /* INC_MAX30101_DRIVER_H_ */
