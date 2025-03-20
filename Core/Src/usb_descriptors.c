@@ -23,6 +23,9 @@
  *
  */
 
+#include "watch_config.h"
+#ifdef USB_DRIVE
+
 #include "tusb.h"
 #include "../hw/bsp/board_api.h"
 
@@ -205,3 +208,5 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 
   return _desc_str;
 }
+
+#endif

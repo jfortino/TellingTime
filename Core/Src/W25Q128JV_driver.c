@@ -39,6 +39,100 @@ EFlashStatus Flash_Init(SPI_HandleTypeDef* SPI, GPIO_TypeDef* GPIOx, uint16_t GP
 }
 
 
+
+EFlashStatus Flash_ReadData(uint32_t addr, uint8_t* data, uint16_t size)
+{
+	HAL_StatusTypeDef hal_status;
+	uint8_t instr[4];
+
+	// Checks for argument errors
+	if (addr + size - 1 > 0x00FFFFFF)
+	{
+		return FLASH_ERROR;
+	}
+
+	// Concatenates and orders instruction code and address
+	format_instr(READ_DATA, addr, instr);
+
+	#ifdef USB_DRIVE
+	// Waits for any previously running operations to complete
+	if (Flash_WaitUntilAvailable() != FLASH_OK)
+	{
+		return FLASH_ERROR;
+	}
+	#endif
+
+	// Sets CS pin low
+	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_RESET);
+
+	// Transmits read instruction
+	hal_status = HAL_SPI_Transmit(hspi, instr, INSTR_SIZE + ADDR_SIZE, SPI_FLASH_TIMEOUT);
+	if (hal_status != HAL_OK)
+	{
+		HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_SET);
+		return FLASH_ERROR;
+	}
+
+	// Reads the specified number of bytes of data
+	hal_status = HAL_SPI_Receive(hspi, data, size, SPI_FLASH_TIMEOUT);
+	// Sets CS pin high
+	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_SET);
+
+	if (hal_status != HAL_OK)
+	{
+		return FLASH_ERROR;
+	}
+
+	return FLASH_OK;
+}
+
+
+EFlashStatus Flash_ReleasePowerDown()
+{
+	uint8_t instr_code = RELEASE_POWER_DOWN;
+	HAL_StatusTypeDef hal_status;
+
+	// Sets the CS pin low
+	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_RESET);
+	// Transmits the release power down instruction
+	hal_status = HAL_SPI_Transmit(hspi, &instr_code, INSTR_SIZE, SPI_FLASH_TIMEOUT);
+	// Sets the CS pin high
+	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_SET);
+
+	if (hal_status != HAL_OK)
+	{
+		return FLASH_ERROR;
+	}
+
+	return FLASH_OK;
+}
+
+
+
+
+/*
+static EFlashStatus Flash_VolatileSRWriteEnable()
+{
+	return FLASH_OK;
+}
+
+
+static EFlashStatus Flash_WriteDisable()
+{
+	return FLASH_OK;
+}
+*/
+
+
+
+/*
+EFlashStatus Flash_DeviceID()
+{
+	return FLASH_OK;
+}
+*/
+
+#ifdef USB_DRIVE
 EFlashStatus Flash_IsBusy()
 {
 	uint8_t sr1;
@@ -75,6 +169,7 @@ EFlashStatus Flash_IsBusy()
 	return FLASH_OK;
 }
 
+
 EFlashStatus Flash_WaitUntilAvailable()
 {
 	EFlashStatus flash_status;
@@ -91,7 +186,6 @@ EFlashStatus Flash_WaitUntilAvailable()
 
 	return FLASH_OK;
 }
-
 
 
 static EFlashStatus Flash_WriteEnable()
@@ -119,49 +213,6 @@ static EFlashStatus Flash_WriteEnable()
 
 	return FLASH_OK;
 }
-
-
-/*
-static EFlashStatus Flash_VolatileSRWriteEnable()
-{
-	return FLASH_OK;
-}
-
-
-static EFlashStatus Flash_WriteDisable()
-{
-	return FLASH_OK;
-}
-*/
-
-
-EFlashStatus Flash_ReleasePowerDown()
-{
-	uint8_t instr_code = RELEASE_POWER_DOWN;
-	HAL_StatusTypeDef hal_status;
-
-	// Sets the CS pin low
-	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_RESET);
-	// Transmits the release power down instruction
-	hal_status = HAL_SPI_Transmit(hspi, &instr_code, INSTR_SIZE, SPI_FLASH_TIMEOUT);
-	// Sets the CS pin high
-	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_SET);
-
-	if (hal_status != HAL_OK)
-	{
-		return FLASH_ERROR;
-	}
-
-	return FLASH_OK;
-}
-
-
-/*
-EFlashStatus Flash_DeviceID()
-{
-	return FLASH_OK;
-}
-*/
 
 
 EFlashStatus Flash_EraseSection(uint32_t addr, EFlashEraseType erase_type)
@@ -236,51 +287,6 @@ EFlashStatus Flash_EraseChip()
 	hal_status = HAL_SPI_Transmit(hspi, &instr_code, INSTR_SIZE, SPI_FLASH_TIMEOUT);
 
 	// Sets the CS pin high
-	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_SET);
-
-	if (hal_status != HAL_OK)
-	{
-		return FLASH_ERROR;
-	}
-
-	return FLASH_OK;
-}
-
-
-EFlashStatus Flash_ReadData(uint32_t addr, uint8_t* data, uint16_t size)
-{
-	HAL_StatusTypeDef hal_status;
-	uint8_t instr[4];
-
-	// Checks for argument errors
-	if (addr + size - 1 > 0x00FFFFFF)
-	{
-		return FLASH_ERROR;
-	}
-
-	// Concatenates and orders instruction code and address
-	format_instr(READ_DATA, addr, instr);
-
-	// Waits for any previously running operations to complete
-	if (Flash_WaitUntilAvailable() != FLASH_OK)
-	{
-		return FLASH_ERROR;
-	}
-
-	// Sets CS pin low
-	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_RESET);
-
-	// Transmits read instruction
-	hal_status = HAL_SPI_Transmit(hspi, instr, INSTR_SIZE + ADDR_SIZE, SPI_FLASH_TIMEOUT);
-	if (hal_status != HAL_OK)
-	{
-		HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_SET);
-		return FLASH_ERROR;
-	}
-
-	// Reads the specified number of bytes of data
-	hal_status = HAL_SPI_Receive(hspi, data, size, SPI_FLASH_TIMEOUT);
-	// Sets CS pin high
 	HAL_GPIO_WritePin(cs_pin_port, cs_pin_num, GPIO_PIN_SET);
 
 	if (hal_status != HAL_OK)
@@ -413,7 +419,7 @@ EFlashStatus Flash_WriteData(uint32_t start_addr, uint8_t* data, uint16_t size)
 	return FLASH_OK;
 }
 
-
+#endif
 /*
 EFlashStatus Flash_ReadSR(uint8_t sr_num)
 {

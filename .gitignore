@@ -1,5 +1,8 @@
 .settings/
-Debug/
+Debug USB/
+Debug User/
+Release USB/
+Release User/
 Drivers/
 Middlewares/
 USB_DEVICE/

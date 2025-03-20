@@ -22,7 +22,9 @@
 #include "stm32l0xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#ifdef USB_DEVICE
 #include "tusb.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -222,8 +224,10 @@ void USART1_IRQHandler(void)
 void USB_IRQHandler(void)
 {
   /* USER CODE BEGIN USB_IRQn 0 */
+  #ifdef USB_DEVICE
   tud_int_handler(BOARD_DEVICE_RHPORT_NUM);
   return;
+  #endif
   /* USER CODE END USB_IRQn 0 */
   HAL_PCD_IRQHandler(&hpcd_USB_FS);
   /* USER CODE BEGIN USB_IRQn 1 */
