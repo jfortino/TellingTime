@@ -293,6 +293,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     }
 	#endif
 }
+#endif
 
 #ifdef EXTI_SIGNALS
 uint8_t getEXTILineNum(uint16_t GPIO_Pin)
