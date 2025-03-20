@@ -15,14 +15,16 @@ typedef enum
 	DASH,
 	SPACE,
 	PAUSE,
-	DONE
-} EMorseState;
+	MORSE_DONE
+} EMorseFSMState;
+
+extern EMorseFSMState morse_fsm_state;
 
 const char* Generate_Morse(unsigned int num);
 
 void MorseFSM_Prime(const char* message);
 
-EMorseState MorseFSM_Run();
+EMorseFSMState MorseFSM_Run();
 
 
 #endif /* INC_MORSE_DRIVER_H_ */

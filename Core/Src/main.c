@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "fatfs.h"
 #include "i2c.h"
 #include "i2s.h"
@@ -26,18 +27,27 @@
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_device.h"
+#include "usb.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "watch_config.h"	// THIS MUST BE INCLUDED FIRST
 
+#ifdef USB_DRIVE
+#include "tusb.h"
+#endif
+
 #ifdef VIBRATION
 #include "morse_driver.h"
 #endif
-#include "tusb.h"
+
 #include "W25Q128JV_driver.h"
+
+#ifdef AUDIO
+#include "audio_player.h"
+#include "audio_library.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,10 +70,19 @@
 /* USER CODE BEGIN PV */
 #ifdef DEBUG_TERMINAL
 uint8_t rx_buffer[2];
+
 #ifdef VIBRATION
-char morse_buffer[14];
+char morse_buffer[15];
 uint8_t morse_rx_flag = 0;
 #endif
+
+#endif
+
+#ifdef AUDIO
+uint16_t audio_double_buffer[AUDIO_BUFFER_SAMPLES*2];
+uint8_t fill_audio_buffer_flag = 0;
+uint8_t play_audio_flag = 0;
+EAudioFile audio_list[1] = {ZERO_AUDIO};
 #endif
 /* USER CODE END PV */
 
@@ -113,12 +132,21 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					break;
 				#endif
 
+				#ifdef AUDIO
 				case 0x5556:	// Volume Up (VU)
 					HAL_UART_Transmit(&huart1, "Volume Up\r\n", 12, 1000);
 					break;
 				case 0x4456:	// Volume Down (VD)
 					HAL_UART_Transmit(&huart1, "Volume Down\r\n", 13, 1000);
 					break;
+				case 0x4150:	// Play Audio (PA)
+					play_audio_flag = 1;
+					PlayerFSM_Prime(audio_list, 1, audio_double_buffer);
+					HAL_GPIO_WritePin(GPIOA, FLASH_WP_Pin, GPIO_PIN_SET);
+					HAL_I2S_Transmit_DMA(&hi2s2, audio_double_buffer, AUDIO_BUFFER_SAMPLES * 2);
+					break;
+				#endif
+
 				case 0x5541:	// Arrow Up (AU)
 					HAL_UART_Transmit(&huart1, "Arrow Up\r\n", 11, 1000);
 					break;
@@ -128,11 +156,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				case 0x4553:	// Select (SE)
 					HAL_UART_Transmit(&huart1, "Select\r\n", 9, 1000);
 					break;
+
+				#ifdef VIBRATION
 				case 0x4F4D:	// Morse (MO)
 					HAL_UART_Transmit(&huart1, "Morse\r\n", 8, 1000);
 					HAL_UART_Receive_IT(&huart1, morse_buffer, 14);
 					morse_rx_flag = 1;
 					break;
+				#endif
 
 				default:
 					break;
@@ -147,6 +178,37 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 #endif
 
 
+#ifdef AUDIO
+void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+	HAL_GPIO_TogglePin(GPIOA, FLASH_WP_Pin);
+	if (play_audio_flag)
+	{
+		fill_audio_buffer_flag = 1;
+	}
+	else
+	{
+		HAL_I2S_DMAStop(&hi2s2);
+	}
+}
+
+
+void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+	HAL_GPIO_TogglePin(GPIOA, FLASH_WP_Pin);
+	if (play_audio_flag)
+	{
+		fill_audio_buffer_flag = 2;
+	}
+	else
+	{
+		HAL_I2S_DMAStop(&hi2s2);
+	}
+}
+#endif
+
+
+#ifdef VIBRATION
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
     if (htim == &htim21)	// VIB Control Timer
@@ -164,7 +226,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     			HAL_GPIO_WritePin(VIB_CTRL_GPIO_Port, VIB_CTRL_Pin, GPIO_PIN_RESET);
     			break;
 
-    		case DONE:
+    		case MORSE_DONE:
     			HAL_GPIO_WritePin(VIB_CTRL_GPIO_Port, VIB_CTRL_Pin, GPIO_PIN_RESET);
     			HAL_TIM_Base_Stop_IT(&htim21);
     			break;
@@ -175,6 +237,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 		#endif
     }
 }
+#endif
 
 /* USER CODE END 0 */
 
@@ -207,16 +270,23 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_I2S2_Init();
   MX_SPI1_Init();
-  MX_USB_DEVICE_Init();
   MX_RTC_Init();
   MX_ADC_Init();
   MX_USART1_UART_Init();
+  MX_USB_PCD_Init();
+  MX_FATFS_Init();
   MX_TIM21_Init();
   /* USER CODE BEGIN 2 */
-  //uint8_t test_data = 0x12;
+  Flash_Init(&hspi1, FLASH_CS_GPIO_Port, FLASH_CS_Pin);
+
+  #ifdef USB_DRIVE
+  tusb_init();
+  #endif
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -226,7 +296,9 @@ int main(void)
 	  //HAL_UART_Receive(&huart1, usart_buf, 256, 1000);
 	  //HAL_I2C_Master_Transmit(&hi2c1, 84, (unsigned char*) "Hello World!", 12, 2000);
 	  //HAL_UART_Transmit(&huart1, usart_buf, 256, 1000);
+	  #ifdef USB_DRIVE
 	  tud_task();
+	  #endif
 
 	  #ifdef DEBUG_TERMINAL
 	  #ifdef VIBRATION
@@ -237,12 +309,34 @@ int main(void)
 	  #ifdef VIBRATION
 	  }
 	  #endif
+
+
+	  #ifdef AUDIO
+	  if (fill_audio_buffer_flag)
+	  {
+		    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+		    if (PlayerFSM_Run() != AUDIOPLAYER_OK)
+			{
+				play_audio_flag = 0;
+			}
+
+
+			uint16_t* audio_single_buffer = audio_double_buffer + (fill_audio_buffer_flag == 1 ? 0 : AUDIO_BUFFER_SAMPLES);
+
+			for (int i = 1; i < AUDIO_BUFFER_SAMPLES / 2; i++)
+			{
+				audio_single_buffer[AUDIO_BUFFER_SAMPLES - i*2] = audio_single_buffer[AUDIO_BUFFER_SAMPLES / 2 - i];
+				audio_single_buffer[AUDIO_BUFFER_SAMPLES / 2 - i] = 0;
+			}
+
+			fill_audio_buffer_flag = 0;
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	  }
+ 	  #endif
+
 	  #endif
 
 
-	  //HAL_SPI_Transmit(&hspi1, &test_data, 1, 1000);
-	  //HAL_GPIO_TogglePin(GPIOA, VIB_CTRL_Pin);
-	  // HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -268,13 +362,17 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSE
-                              |RCC_OSCILLATORTYPE_HSI48;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI
+                              |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_HSI48;
   RCC_OscInitStruct.LSEState = RCC_LSE_BYPASS;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLLMUL_4;
+  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLLDIV_2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -284,12 +382,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -297,13 +395,12 @@ void SystemClock_Config(void)
                               |RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USB;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
-  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_SYSCLK, RCC_MCODIV_1);
 
   /** Enable the SYSCFG APB clock
   */

@@ -35,6 +35,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "ff_gen_drv.h"
+#include "watch_config.h"
 #include "W25Q128JV_driver.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -144,10 +145,12 @@ DRESULT USER_write (
 )
 {
   /* USER CODE BEGIN WRITE */
-    if (Flash_WriteData(sector * 512, buff, count * 512) != FLASH_OK)
+	#ifdef USB_DRIVE
+	if (Flash_WriteData(sector * 512, (uint8_t*) buff, count * 512) != FLASH_OK)
     {
     	return RES_ERROR;
     }
+	#endif
 
     return RES_OK;
   /* USER CODE END WRITE */

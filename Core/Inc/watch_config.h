@@ -8,20 +8,26 @@
 #ifndef INC_WATCH_CONFIG_H_
 #define INC_WATCH_CONFIG_H_
 
+//====================================================Misc====================================================
+//#define LOW_POWER_ENABLED
+#define DEBUG_TERMINAL
+
+#define SPI_FLASH_TIMEOUT 100
+
+// USB Eats a lot of Flash so we have 2 different software builds, one for USB drive (initial loading of data on device) and one for normal operation
+// This symbol is defined by the build configuration
+#ifndef USB_DRIVE
+
 //================================================User Feedback===============================================
-#define SPEAKER
-#ifdef SPEAKER
-#define AUDIO_FILE_SIZE 1600		// The number of bytes per audio file
-#define AUDIO_BUFFER_SIZE 1600		// The number of bytes per audio buffer
-#endif
+#define AUDIO
+#define AUDIO_BUFFER_SAMPLES 512		// The number of samples per audio buffer
 
 #define VIBRATION
-#ifdef VIBRATION
-	#define DOT_LENGTH 2		// The number of timer overflow lengths in a dot
-	#define DASH_LENGTH 5		// The number of timer overflow lengths in a dash
-	#define SPACE_LENGTH 5		// The number of timer overflow lengths between numbers
-	#define PAUSE_LENGTH 1		// The number of timer overflow lengths between consecutive pulses
-#endif
+#define DOT_LENGTH 2		// The number of timer overflow lengths in a dot
+#define DASH_LENGTH 5		// The number of timer overflow lengths in a dash
+#define SPACE_LENGTH 5		// The number of timer overflow lengths between numbers
+#define PAUSE_LENGTH 1		// The number of timer overflow lengths between consecutive pulses
+
 
 //=================================================Biosignals=================================================
 #define HEART_RATE_MEASURE
@@ -45,9 +51,5 @@
 
 #define ALARMS
 
-//====================================================Misc====================================================
-//#define LOW_POWER_ENABLED
-#define DEBUG_TERMINAL
-#define SPI_FLASH_TIMEOUT 100
-
+#endif /* USB_DRIVE */
 #endif /* INC_WATCH_CONFIG_H_ */
