@@ -20,7 +20,9 @@
 
 //================================================User Feedback===============================================
 #define AUDIO
-#define AUDIO_BUFFER_SAMPLES 512		// The number of samples per audio buffer
+#define AUDIO_BUFFER_SAMPLES 512		// The number of samples per audio buffer for 1 audio channel
+#define NUM_AUDIO_BUFFERS 2				// The number of audio buffers (1 = single buffer, 2 = double buffering). Value should not exceed 2.
+										// NOTE: If NUM_AUDIO_BUFFERS == 1, the DMA must be set to "Normal" mode
 
 #define VIBRATION
 #define DOT_LENGTH 2		// The number of timer overflow lengths in a dot

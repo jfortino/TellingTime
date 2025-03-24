@@ -79,7 +79,7 @@ uint8_t morse_rx_flag = 0;
 #endif
 
 #ifdef AUDIO
-uint16_t audio_double_buffer[AUDIO_BUFFER_SAMPLES*2];
+uint16_t audio_buffers[AUDIO_BUFFER_SAMPLES * 2 * NUM_AUDIO_BUFFERS];
 uint8_t fill_audio_buffer_flag = 0;
 uint8_t play_audio_flag = 0;
 EAudioFile audio_list[1] = {ZERO_AUDIO};
@@ -140,10 +140,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					HAL_UART_Transmit(&huart1, "Volume Down\r\n", 13, 1000);
 					break;
 				case 0x4150:	// Play Audio (PA)
+					HAL_UART_Transmit(&huart1, "Play Audio\r\n", 13, 1000);
 					play_audio_flag = 1;
-					PlayerFSM_Prime(audio_list, 1, audio_double_buffer);
-					HAL_GPIO_WritePin(GPIOA, FLASH_WP_Pin, GPIO_PIN_SET);
-					HAL_I2S_Transmit_DMA(&hi2s2, audio_double_buffer, AUDIO_BUFFER_SAMPLES * 2);
+					PlayerFSM_Prime(audio_list, 1, audio_buffers);
+					HAL_I2S_Transmit_DMA(&hi2s2, audio_buffers, AUDIO_BUFFER_SAMPLES * 2 * NUM_AUDIO_BUFFERS);
 					break;
 				#endif
 
@@ -179,9 +179,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 
 #ifdef AUDIO
+#if NUM_AUDIO_BUFFERS == 2
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	HAL_GPIO_TogglePin(GPIOA, FLASH_WP_Pin);
 	if (play_audio_flag)
 	{
 		fill_audio_buffer_flag = 1;
@@ -191,14 +191,14 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 		HAL_I2S_DMAStop(&hi2s2);
 	}
 }
+#endif
 
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	HAL_GPIO_TogglePin(GPIOA, FLASH_WP_Pin);
 	if (play_audio_flag)
 	{
-		fill_audio_buffer_flag = 2;
+		fill_audio_buffer_flag = 1;
 	}
 	else
 	{
@@ -314,27 +314,20 @@ int main(void)
 	  #ifdef AUDIO
 	  if (fill_audio_buffer_flag)
 	  {
-		    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-		    if (PlayerFSM_Run() != AUDIOPLAYER_OK)
-			{
-				play_audio_flag = 0;
-			}
+		  if (PlayerFSM_Run() != AUDIOPLAYER_OK)
+		  {
+			  play_audio_flag = 0;
+		  }
 
+		  fill_audio_buffer_flag = 0;
 
-			uint16_t* audio_single_buffer = audio_double_buffer + (fill_audio_buffer_flag == 1 ? 0 : AUDIO_BUFFER_SAMPLES);
-
-			for (int i = 1; i < AUDIO_BUFFER_SAMPLES / 2; i++)
-			{
-				audio_single_buffer[AUDIO_BUFFER_SAMPLES - i*2] = audio_single_buffer[AUDIO_BUFFER_SAMPLES / 2 - i];
-				audio_single_buffer[AUDIO_BUFFER_SAMPLES / 2 - i] = 0;
-			}
-
-			fill_audio_buffer_flag = 0;
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+		  #if NUM_AUDIO_BUFFERS == 1
+		  HAL_I2S_Transmit_DMA(&hi2s2, audio_buffers, AUDIO_BUFFER_SAMPLES * 2);
+		  #endif
 	  }
  	  #endif
 
-	  #endif
+	#endif
 
 
     /* USER CODE END WHILE */
