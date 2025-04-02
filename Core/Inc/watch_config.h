@@ -53,5 +53,24 @@
 
 #define ALARMS
 
+
+//===============================================User Interface===============================================
+#define EXTI_SIGNALS
+typedef enum	// The value for each button must match the EXTI line number that it is connected to
+{
+	TIME_BTN = 3,
+	DATE_BTN = 0,
+	HR_BTN = 4,
+	SPO2_BTN = 1,
+	VOL_UP_BTN = 2,
+	VOL_DOWN_BTN = 5,
+	MENU_UP_BTN = 6,
+	MENU_DOWN_BTN = 7,
+	MENU_SELECT_BTN = 8,
+	SPO2_INT = 9,
+	CHARGE_STAT_INT = 10,
+	LOW_BATTERY_INT = 11
+} EUserButton;
+
 #endif /* USB_DRIVE */
 #endif /* INC_WATCH_CONFIG_H_ */

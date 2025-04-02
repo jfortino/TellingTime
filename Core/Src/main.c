@@ -48,6 +48,14 @@
 #include "audio_player.h"
 #include "audio_library.h"
 #endif
+
+#ifdef EXTI_SIGNALS
+#include "button_fsm.h"
+#endif
+
+#include "event_queue.h"
+
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,6 +76,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+#ifdef EXTI_SIGNALS
+const GPIO_TypeDef* EXTI_SIGNAL_PORTS[] = {GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA, GPIOA};
+#endif
+
 #ifdef DEBUG_TERMINAL
 uint8_t rx_buffer[2];
 
@@ -208,10 +220,11 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 #endif
 
 
-#ifdef VIBRATION
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-    if (htim == &htim21)	// VIB Control Timer
+	#ifdef VIBRATION
+	// Vibration motor timer
+    if (htim == &htim21)
     {
 		#ifdef VIBRATION
     	switch(MorseFSM_Run())
@@ -234,10 +247,181 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     		default:
     			break;
     	}
+
+    	return;
 		#endif
     }
+	#endif
+
+	#ifdef EXTI_SIGNALS
+    // Button debounce timer
+    if (htim == &htim22)
+    {
+    	HAL_TIM_Base_Stop_IT(&htim22);
+
+    	if (Button_GetState() == INITIAL_PRESS)
+    	{
+			uint8_t button_exti_line = Button_GetButton();
+
+			if (HAL_GPIO_ReadPin(EXTI_SIGNAL_PORTS[button_exti_line], (0x0001 << button_exti_line)) == GPIO_PIN_RESET)
+			{
+				Button_DebounceComplete();
+				__HAL_TIM_CLEAR_FLAG(&htim2, TIM_SR_UIF); // Stops TIM2's interrupt from firing immediately
+				HAL_TIM_Base_Start_IT(&htim2);
+			}
+			else
+			{
+				Button_Release();
+			}
+    	}
+
+    	return;
+    }
+
+    // Long button press timer
+    if (htim == &htim2)
+    {
+    	HAL_TIM_Base_Stop_IT(&htim2);
+
+    	if (Button_GetState() == DEBOUNCED)
+    	{
+    		Button_LongPress();
+    		EventQueue_Enqueue(Button_GetWatchEvent());
+    	}
+
+		return;
+    }
+	#endif
+}
+
+#ifdef EXTI_SIGNALS
+uint8_t getEXTILineNum(uint16_t GPIO_Pin)
+{
+	for (uint8_t i = 0; i < 16; i++)
+	{
+		if (GPIO_Pin & (0x0001 << i))
+		{
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	uint8_t exti_line_num = getEXTILineNum(GPIO_Pin);
+	GPIO_PinState pin_state = HAL_GPIO_ReadPin(EXTI_SIGNAL_PORTS[exti_line_num], GPIO_Pin);
+
+	switch (GPIO_Pin)
+	{
+		case SPO2_INT:
+			break;
+
+		case CHARGE_STAT_INT:
+			EventQueue_Enqueue(pin_state == GPIO_PIN_RESET ? CHARGE_CYCLE_START : CHARGE_CYCLE_END);
+			break;
+
+		case LOW_BATTERY_INT:
+			break;
+
+		default:	// If the interrupt signal did not come from the above three cases, it must be a button
+			switch (Button_GetState())
+			{
+				case BUTTON_IDLE:	// This runs when the button is initially pressed
+					if (EventQueue_GetNumQueued() == 0)	// Watch functions controlled by buttons are blocked if there is already another event
+					{
+						Button_InitPress(exti_line_num);
+						__HAL_TIM_CLEAR_FLAG(&htim22, TIM_SR_UIF); // Stops TIM22's interrupt from firing immediately
+						HAL_TIM_Base_Start_IT(&htim22);
+					}
+					break;
+
+				case DEBOUNCED:		// This runs once the button is debounced and released before the long press timer overflows
+					Button_ShortPress();
+					EventQueue_Enqueue(Button_GetWatchEvent());
+					Button_Release();
+					break;
+
+				case LONG_PRESS:	// This runs once the button is debounced and released after the long press timer overflows
+					Button_Release();
+					break;
+
+				default:
+					break;
+			}
+			break;
+	}
 }
 #endif
+
+
+void handle_events()
+{
+	while (EventQueue_GetNumQueued() > 0)
+	{
+		switch (EventQueue_Peek())
+		{
+			case GET_TIME_MIN:
+				HAL_UART_Transmit(&huart1, "Time Min\r\n", 11, 1000);
+				EventQueue_Dequeue();
+				break;
+
+			case GET_TIME_FULL:
+				HAL_UART_Transmit(&huart1, "Time Full\r\n", 12, 1000);
+				EventQueue_Dequeue();
+				break;
+
+			case GET_DATE_DAY:
+				break;
+
+			case GET_DATE_FULL:
+				break;
+
+			case GET_HR:
+				HAL_UART_Transmit(&huart1, "Heart Rate\r\n", 13, 1000);
+				EventQueue_Dequeue();
+				break;
+
+			case GET_SPO2:
+				break;
+
+			case VOL_UP:
+				break;
+
+			case VOL_DOWN:
+				break;
+
+			case VOL_MUTE:
+				break;
+
+			case VOL_UNMUTE:
+				break;
+
+			case MENU_UP:
+				break;
+
+			case MENU_DOWN:
+				break;
+
+			case MENU_SELECT:
+				break;
+
+			case CHARGE_CYCLE_START:
+				break;
+
+			case CHARGE_CYCLE_END:
+				break;
+
+			case LOW_BATTERY_DETECT:
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
 
 /* USER CODE END 0 */
 
@@ -326,8 +510,9 @@ int main(void)
 		  #endif
 	  }
  	  #endif
+	  #endif /*DEBUG_TERMINAL*/
 
-	#endif
+	  handle_events();
 
 
     /* USER CODE END WHILE */
