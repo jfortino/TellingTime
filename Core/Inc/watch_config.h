@@ -12,8 +12,13 @@
 //#define LOW_POWER_ENABLED
 #define DEBUG_TERMINAL
 
+#define SPI_FLASH
 #define SPI_FLASH_TIMEOUT 100
 
+// USB MSC can't work without external flash
+#ifndef SPI_FLASH
+#undef USB_DRIVE
+#endif
 // USB Eats a lot of Flash so we have 2 different software builds, one for USB drive (initial loading of data on device) and one for normal operation
 // This symbol is defined by the build configuration
 #ifndef USB_DRIVE
@@ -32,8 +37,8 @@
 
 
 //=================================================Biosignals=================================================
-#define HEART_RATE_MEASURE
-#define PULSE_OX_MEASURE
+#define BIOSIGNALS
+#define SPO2_TIMEOUT 100
 
 //================================================Time Keeping================================================
 #define DATE_TIME

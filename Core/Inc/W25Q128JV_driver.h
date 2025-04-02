@@ -9,7 +9,6 @@
 #ifndef INC_W25Q128JV_DRIVER_H_
 #define INC_W25Q128JV_DRIVER_H_
 
-#include "watch_config.h"
 #include <stdint.h>
 #include "spi.h"
 
@@ -96,21 +95,16 @@ typedef enum
 EFlashStatus Flash_Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
 EFlashStatus Flash_ReadData(uint32_t addr, uint8_t* data, uint16_t size);
 EFlashStatus Flash_ReleasePowerDown();
-
-#ifdef USB_DRIVE
 EFlashStatus Flash_IsBusy();
 EFlashStatus Flash_WaitUntilAvailable();
 //EFlashStatus Flash_WriteEnable();
 //EFlashStatus Flash_VolatileSRWriteEnable();
 //EFlashStatus Flash_WriteDisable();
-
 //EFlashStatus Flash_DeviceID();
-
 //EFlashStatus Flash_FastRead();
 EFlashStatus Flash_WriteData(uint32_t addr, uint8_t* data, uint16_t size);
 EFlashStatus Flash_EraseSection(uint32_t addr, EFlashEraseType erase_type);
 EFlashStatus Flash_EraseChip();
-#endif
 //EFlashStatus Flash_ReadSR(uint8_t sr_num);
 //EFlashStatus Flash_WriteSR(uint8_t sr_num);
 //EFlashStatus Flash_ReadSFDPRegister();

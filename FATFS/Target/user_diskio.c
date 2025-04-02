@@ -119,10 +119,12 @@ DRESULT USER_read (
 )
 {
   /* USER CODE BEGIN READ */
-    if (Flash_ReadData(sector * 512, buff, count * 512) != FLASH_OK)
+	#ifdef SPI_FLASH
+	if (Flash_ReadData(sector * 512, buff, count * 512) != FLASH_OK)
     {
     	return RES_ERROR;
     }
+	#endif
 
 	return RES_OK;
   /* USER CODE END READ */

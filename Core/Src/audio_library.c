@@ -5,6 +5,9 @@
  *  Author: Joseph Fortino
  */
 
+#include "watch_config.h"
+#ifdef AUDIO
+
 #include "audio_library.h"
 
 const char AUDIO_FILENAMES[NUM_FILES][MAX_FILENAME_LENGTH] =
@@ -14,3 +17,5 @@ const char AUDIO_FILENAMES[NUM_FILES][MAX_FILENAME_LENGTH] =
 		"twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "hundred",
 		"AM", "PM", "BPM", "percent", "your", "is", "set", "time", "low_bat"
 };
+
+#endif

@@ -42,7 +42,9 @@
 #include "morse_driver.h"
 #endif
 
+#ifdef SPI_FLASH
 #include "W25Q128JV_driver.h"
+#endif
 
 #ifdef AUDIO
 #include "audio_player.h"
@@ -132,13 +134,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					break;
 				#endif
 
-				#ifdef HEART_RATE_MEASURE
+				#ifdef BIOSIGNALS
 				case 0x5248:	// Heart Rate (HR)
 					HAL_UART_Transmit(&huart1, "Heart Rate\r\n", 13, 1000);
 					break;
-				#endif
 
-				#ifdef PULSE_OX_MEASURE
 				case 0x4F50:	// Pulse Ox (PO)
 					HAL_UART_Transmit(&huart1, "Pulse Ox\r\n", 11, 1000);
 					break;
@@ -466,7 +466,13 @@ int main(void)
   MX_FATFS_Init();
   MX_TIM21_Init();
   /* USER CODE BEGIN 2 */
-  Flash_Init(&hspi1, FLASH_CS_GPIO_Port, FLASH_CS_Pin);
+
+  #ifdef SPI_FLASH
+  if (Flash_Init(&hspi1, FLASH_CS_GPIO_Port, FLASH_CS_Pin) != FLASH_OK)
+  {
+	  Error_Handler();
+  }
+  #endif
 
   #ifdef USB_DRIVE
   tusb_init();
