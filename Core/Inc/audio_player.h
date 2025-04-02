@@ -9,7 +9,6 @@
 #define INC_AUDIO_PLAYER_H_
 
 #include <stdint.h>
-#include "watch_config.h"
 #include "audio_library.h"
 
 typedef enum

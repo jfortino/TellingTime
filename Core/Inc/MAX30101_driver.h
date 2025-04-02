@@ -10,8 +10,11 @@
 #ifndef INC_MAX30101_DRIVER_H_
 #define INC_MAX30101_DRIVER_H_
 
-#define INSTR_SIZE (1) //copied from flash diver
-#define ADDR_SIZE (3) // copied from flash driver
+#include "i2c.h"
+
+#define DEVICE_ADDR (0xAE)
+#define REG_ADDR_SIZE (1)
+#define REG_DATA_SIZE (1)
 
 // STATUS REGISTERS
 #define	INT_STATUS_1 (0x00)
@@ -96,10 +99,12 @@
 
 typedef enum
 {
-  SP02_OK,
-  SP02_ERROR
-} ESP02Status;
+  SPO2_OK,
+  SPO2_ERROR
+} ESPO2Status;
 
-EFlashStatus SP02_Init(I2C_HandleTypeDef* hi2c);
+ESPO2Status SPO2_Init(I2C_HandleTypeDef* I2C_handle);
+ESPO2Status SPO2_MeasureHeartRate();
+ESPO2Status SPO2_MeasurePulseOx();
 
 #endif /* INC_MAX30101_DRIVER_H_ */

@@ -5,9 +5,12 @@
  *  Author: Joseph Fortino
  */
 
+#include "watch_config.h"
+#ifdef SPI_FLASH
+
 #include <string.h>
 #include "W25Q128JV_driver.h"
-#include "watch_config.h"
+
 
 static SPI_HandleTypeDef* hspi;
 static GPIO_TypeDef* cs_pin_port;
@@ -556,3 +559,5 @@ EFlashStatus Flash_ResetDevice()
 
 	return FLASH_OK;
 }
+
+#endif
