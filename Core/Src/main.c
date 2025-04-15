@@ -51,6 +51,9 @@
 #include "audio_library.h"
 #endif
 
+#ifdef BIOSIGNALS
+#include "MAX30101_driver.h"
+#endif
 #ifdef EXTI_SIGNALS
 #include "button_fsm.h"
 #endif

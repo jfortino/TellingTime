@@ -39,6 +39,8 @@
 //=================================================Biosignals=================================================
 #define BIOSIGNALS
 #define SPO2_TIMEOUT 100
+#define HR_BUFFER_NUM 1
+#define SPO2_BUFFER_NUM 1
 
 //================================================Time Keeping================================================
 #define DATE_TIME
