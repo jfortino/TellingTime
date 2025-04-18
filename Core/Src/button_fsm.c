@@ -77,8 +77,8 @@ EWatchEvent Button_GetWatchEvent()
 			watch_event = GET_HR;
 			break;
 
-		case SPO2_BTN:
-			watch_event = GET_SPO2;
+		case PO_BTN:
+			watch_event = GET_PO;
 			break;
 
 		case VOL_UP_BTN:

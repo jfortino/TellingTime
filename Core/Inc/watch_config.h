@@ -25,11 +25,13 @@
 
 //================================================User Feedback===============================================
 #define AUDIO
-#define AUDIO_BUFFER_SAMPLES 512		// The number of samples per audio buffer for 1 audio channel
-#define NUM_AUDIO_BUFFERS 2				// The number of audio buffers (1 = single buffer, 2 = double buffering). Value should not exceed 2.
+#define AUDIO_BUFFER_SAMPLES 1024		// The number of samples per audio buffer for 1 audio channel
+#define NUM_AUDIO_BUFFERS 1				// The number of audio buffers (1 = single buffer, 2 = double buffering). Value should not exceed 2.
 										// NOTE: If NUM_AUDIO_BUFFERS == 1, the DMA must be set to "Normal" mode
+#define MAX_AUDIO_LIST_SIZE 10
 
 #define VIBRATION
+#define MORSE_BUFFER_SIZE 15
 #define DOT_LENGTH 2		// The number of timer overflow lengths in a dot
 #define DASH_LENGTH 5		// The number of timer overflow lengths in a dash
 #define SPACE_LENGTH 5		// The number of timer overflow lengths between numbers
@@ -39,23 +41,24 @@
 //=================================================Biosignals=================================================
 #define BIOSIGNALS
 #define SPO2_TIMEOUT 100
-#define HR_BUFFER_NUM 1
-#define SPO2_BUFFER_NUM 1
+#define HR_SAMPLE_NUM 3200
+#define SPO2_SAMPLE_NUM 1
+
 
 //================================================Time Keeping================================================
 #define DATE_TIME
 #ifdef DATE_TIME
-	typedef enum
-	{
-		MDY,
-		DMY
-	} EDateFormat;
+typedef enum
+{
+	DATE_MDY,
+	DATE_DMY
+} EDateFormat;
 
-	typedef enum
-	{
-		TWELVE,
-		TWENTYFOUR
-	} ETimeFormat;
+typedef enum
+{
+	TIME_TWELVE_HOUR,
+	TIME_TWENTYFOUR_HOUR
+} ETimeFormat;
 #endif
 
 #define ALARMS
@@ -65,19 +68,24 @@
 #define EXTI_SIGNALS
 typedef enum	// The value for each button must match the EXTI line number that it is connected to
 {
-	TIME_BTN = 3,
-	DATE_BTN = 0,
-	HR_BTN = 4,
-	SPO2_BTN = 1,
-	VOL_UP_BTN = 2,
-	VOL_DOWN_BTN = 5,
-	MENU_UP_BTN = 6,
-	MENU_DOWN_BTN = 7,
-	MENU_SELECT_BTN = 8,
+	TIME_BTN = 0,
+	DATE_BTN = 15,
+	HR_BTN = 11,
+	PO_BTN = 4,
+	VOL_UP_BTN = 14,
+	VOL_DOWN_BTN = 8,
+	MENU_UP_BTN = 13,
+	MENU_DOWN_BTN = 3,
+	MENU_SELECT_BTN = 1,
 	SPO2_INT = 9,
-	CHARGE_STAT_INT = 10,
-	LOW_BATTERY_INT = 11
+	MCP_STAT_INT = 2,
 } EUserButton;
+
+typedef enum
+{
+	AUDIO_MODE,
+	VIBRATION_MODE
+} EFeedbackMode;
 
 #endif /* USB_DRIVE */
 #endif /* INC_WATCH_CONFIG_H_ */

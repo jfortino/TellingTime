@@ -16,6 +16,7 @@ static I2C_HandleTypeDef* hi2c;
 static uint8_t measurement_data[192];
 static uint8_t num_active_leds = 0;
 static uint8_t adc_bit_resolution = 0;
+uint8_t current_sample_index = 0;
 
 
 static ESPO2Status SPO2_ReadRegister(uint16_t reg_addr, uint8_t* reg_data, uint16_t data_size)
@@ -68,17 +69,17 @@ ESPO2Status SPO2_Init(I2C_HandleTypeDef* I2C_handle)
 
 	ESPO2Status spo2_init_status = SPO2_OK;
 
-	spo2_init_status |= SPO2_WriteRegister(INT_EN_1_REG, A_FULL_MASK, SET_BITS);
+	spo2_init_status |= SPO2_WriteRegister(INT_EN_1_REG, PPG_RDY_MASK, SET_BITS);
 	//spo2_init_status |= SPO2_WriteRegister(INT_EN_2_REG, DIE_TEMP_RDY_MASK, SET_BITS);
 
-	spo2_init_status |= SPO2_WriteRegister(FIFO_CONFIG_REG, FIFO_A_FULL_MASK, FIFO_A_FULL(15));
+	//spo2_init_status |= SPO2_WriteRegister(FIFO_CONFIG_REG, FIFO_A_FULL_MASK, FIFO_A_FULL(15));
 	spo2_init_status |= SPO2_WriteRegister(FIFO_CONFIG_REG, SMP_AVE_MASK, CLEAR_BITS);
 	spo2_init_status |= SPO2_WriteRegister(SPO2_CONFIG_REG, LED_PW_MASK, LED_PW_118);
 	spo2_init_status |= SPO2_WriteRegister(SPO2_CONFIG_REG, SPO2_ADC_RGE_MASK, ADC_RGE_16384);
 
 	// We always want the first time slot to be IR LED since it is used for both HR and SPO2 measurements
 	//spo2_init_status |= SPO2_WriteRegister(SLOT_1_2_REG, SLOTx_MASK(1), SLOTx_IR(1));
-	spo2_init_status |= SPO2_WriteRegister(SLOT_1_2_REG, SLOTx_MASK(1), SLOTx_RED(1));
+	spo2_init_status |= SPO2_WriteRegister(SLOT_1_2_REG, SLOTx_MASK(1), SLOTx_GREEN(1));
 
 	spo2_init_status |= SPO2_WriteRegister(LEDx_PA_REG(1), ENTIRE_REG_MASK, LED_PA(6000));
 	spo2_init_status |= SPO2_WriteRegister(LEDx_PA_REG(2), ENTIRE_REG_MASK, LED_PA(12000));
@@ -120,7 +121,7 @@ ESPO2Status SPO2_StartMeasurement(ESPO2MeasurementType measurement_type)
 	spo2_status |= SPO2_WriteRegister(OVF_COUNTER_REG, ENTIRE_REG_MASK, CLEAR_BITS);
 
 	// Allows us to set different sample rates for HR and SPO2 Measurements
-	spo2_status |= SPO2_WriteRegister(SPO2_CONFIG_REG, SPO2_SR_MASK, (measurement_type == MEASURE_HR) ? SR_100 : SR_100);
+	spo2_status |= SPO2_WriteRegister(SPO2_CONFIG_REG, SPO2_SR_MASK, (measurement_type == MEASURE_HR) ? SR_400 : SR_100);
 	// Enables Green LED time slot if we are taking an SPO2 measurement, else it disables the time slot
 	spo2_status |= SPO2_WriteRegister(SLOT_1_2_REG, SLOTx_MASK(2), (measurement_type == MEASURE_SPO2) ? SLOTx_GREEN(2) : CLEAR_BITS);
 
@@ -143,7 +144,7 @@ ESPO2Status SPO2_StopMeasurement()
 	return SPO2_OK;
 }
 
-
+/*
 ESPO2Status SPO2_ReadNewFIFOData()
 {
 	uint8_t fifo_rd_ptr, fifo_wr_ptr;
@@ -175,6 +176,45 @@ ESPO2Status SPO2_ReadNewFIFOData()
 
 	return SPO2_OK;
 }
+*/
+
+
+ESPO2Status SPO2_ReadNewSample(uint32_t new_sample[4])
+{
+	uint8_t fifo_rd_ptr;
+	uint8_t samples_to_read;
+	uint8_t sample_width = num_active_leds * 3;
+
+	uint8_t sample_data[12];
+	uint32_t sample = 0;
+
+	// Gets the current FIFO read and write pointers
+	if (SPO2_ReadRegister(FIFO_RD_PTR_REG, &fifo_rd_ptr, REG_DATA_SIZE) != SPO2_OK)
+	{
+		return SPO2_ERROR;
+	}
+
+	if (SPO2_ReadRegister(FIFO_DATA_REG, sample_data, sample_width) != SPO2_OK)
+	{
+			return SPO2_ERROR;
+	}
+
+	for (int led = 0; led < num_active_leds; led++)
+	{
+		sample = 0;
+
+		for (int i = 0; i < 3; i++)
+		{
+			sample |= sample_data[led * 3 + i] << ((2-i) * 8);
+		}
+
+		sample = sample >> (18 - adc_bit_resolution);	// We may have to shift everything back because MSB is at fixed position, and we may not be using all 18 ADC bits
+		new_sample[led] = sample;
+	}
+
+	return SPO2_OK;
+}
+
 
 /*
 ESPO2Status SPO2_ShutDown()
@@ -241,7 +281,7 @@ ESPO2Status SPO2_ReadInterrupts(uint8_t interrupts[5], uint8_t* num_interrupts)
 	return SPO2_OK;
 }
 
-
+/*
 uint32_t SPO2_GetSample(uint8_t led_num, uint8_t sample_num)
 {
 	uint32_t sample = 0;
@@ -256,5 +296,6 @@ uint32_t SPO2_GetSample(uint8_t led_num, uint8_t sample_num)
 
 	return sample;
 }
+*/
 
 #endif

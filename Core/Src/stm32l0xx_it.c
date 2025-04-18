@@ -58,9 +58,12 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern PCD_HandleTypeDef hpcd_USB_FS;
+extern DMA_HandleTypeDef hdma_spi2_tx;
+extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim21;
+extern TIM_HandleTypeDef htim22;
 extern UART_HandleTypeDef huart1;
+extern PCD_HandleTypeDef hpcd_USB_FS;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -153,7 +156,8 @@ void EXTI0_1_IRQHandler(void)
   /* USER CODE BEGIN EXTI0_1_IRQn 0 */
 
   /* USER CODE END EXTI0_1_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(SPO2_INT_Pin);
+  HAL_GPIO_EXTI_IRQHandler(TIME_BTN_Pin);
+  HAL_GPIO_EXTI_IRQHandler(SEL_BTN_Pin);
   /* USER CODE BEGIN EXTI0_1_IRQn 1 */
 
   /* USER CODE END EXTI0_1_IRQn 1 */
@@ -167,8 +171,8 @@ void EXTI2_3_IRQHandler(void)
   /* USER CODE BEGIN EXTI2_3_IRQn 0 */
 
   /* USER CODE END EXTI2_3_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(SPO2_BTN_Pin);
-  HAL_GPIO_EXTI_IRQHandler(TIME_BTN_Pin);
+  HAL_GPIO_EXTI_IRQHandler(MCP_STAT_Pin);
+  HAL_GPIO_EXTI_IRQHandler(DOWN_BTN_Pin);
   /* USER CODE BEGIN EXTI2_3_IRQn 1 */
 
   /* USER CODE END EXTI2_3_IRQn 1 */
@@ -182,12 +186,44 @@ void EXTI4_15_IRQHandler(void)
   /* USER CODE BEGIN EXTI4_15_IRQn 0 */
 
   /* USER CODE END EXTI4_15_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(PO_BTN_Pin);
+  HAL_GPIO_EXTI_IRQHandler(VOL_DOWN_BTN_Pin);
+  HAL_GPIO_EXTI_IRQHandler(SPO2_INT_Pin);
   HAL_GPIO_EXTI_IRQHandler(HR_BTN_Pin);
   HAL_GPIO_EXTI_IRQHandler(UP_BTN_Pin);
-  HAL_GPIO_EXTI_IRQHandler(DOWN_BTN_Pin);
+  HAL_GPIO_EXTI_IRQHandler(VOL_UP_BTN_Pin);
+  HAL_GPIO_EXTI_IRQHandler(DATE_BTN_Pin);
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
 
   /* USER CODE END EXTI4_15_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 channel 4, channel 5, channel 6 and channel 7 interrupts.
+  */
+void DMA1_Channel4_5_6_7_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel4_5_6_7_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_spi2_tx);
+  /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel4_5_6_7_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM2 global interrupt.
+  */
+void TIM2_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM2_IRQn 0 */
+
+  /* USER CODE END TIM2_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim2);
+  /* USER CODE BEGIN TIM2_IRQn 1 */
+
+  /* USER CODE END TIM2_IRQn 1 */
 }
 
 /**
@@ -202,6 +238,20 @@ void TIM21_IRQHandler(void)
   /* USER CODE BEGIN TIM21_IRQn 1 */
 
   /* USER CODE END TIM21_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM22 global interrupt.
+  */
+void TIM22_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM22_IRQn 0 */
+
+  /* USER CODE END TIM22_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim22);
+  /* USER CODE BEGIN TIM22_IRQn 1 */
+
+  /* USER CODE END TIM22_IRQn 1 */
 }
 
 /**
@@ -227,11 +277,10 @@ void USB_IRQHandler(void)
   #ifdef USB_DRIVE
   tud_int_handler(BOARD_DEVICE_RHPORT_NUM);
   return;
-  #endif
   /* USER CODE END USB_IRQn 0 */
   HAL_PCD_IRQHandler(&hpcd_USB_FS);
   /* USER CODE BEGIN USB_IRQn 1 */
-
+  #endif
   /* USER CODE END USB_IRQn 1 */
 }
 

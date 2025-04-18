@@ -29,16 +29,21 @@ static void format_instr(uint8_t instr_code, uint32_t addr, uint8_t* instr)
 
 EFlashStatus Flash_Init(SPI_HandleTypeDef* SPI, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
 {
-	if (HAL_SPI_GetState(SPI) == HAL_SPI_STATE_READY)
+	if (HAL_SPI_GetState(SPI) != HAL_SPI_STATE_READY)
 	{
-		hspi = SPI;
-		cs_pin_port = GPIOx;
-		cs_pin_num = GPIO_Pin;
-
-		return FLASH_OK;
+		return FLASH_ERROR;
 	}
 
-	return FLASH_ERROR;
+	hspi = SPI;
+	cs_pin_port = GPIOx;
+	cs_pin_num = GPIO_Pin;
+
+	if (Flash_PowerDown() != FLASH_OK)	// Starts flash in power down mode
+	{
+		return FLASH_ERROR;
+	}
+
+	return FLASH_OK;
 }
 
 

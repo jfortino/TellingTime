@@ -12,6 +12,7 @@
 #include "audio_player.h"
 #include "fatfs.h"
 #include <string.h>
+#include <stdio.h>
 
 EAudioPlayerFSMState audio_player_state;
 
@@ -32,6 +33,63 @@ static void interleave_zeros(uint16_t* buf)
 		buf[AUDIO_BUFFER_SAMPLES - i] = 0;
 	}
 }
+
+
+
+void generate_number_audio(EAudioFile* file_list, uint8_t* file_list_size, unsigned int num)
+{
+	EAudioFile audio_file;
+
+	// We only accept 3 digit numbers
+	if (num > 999)
+	{
+		return;
+	}
+
+	int temp = num;
+	int digits[3];	// We should only ever have to work with 3 digit numbers
+	int num_digits = 0;
+
+	// Stores the digits of num into the digits array in ascending order (1s, 10s, 100s, etc.)
+	// Also counts the number of digits
+	while (temp > 0)
+	{
+		digits[num_digits] = temp % 10;
+		temp /= 10;
+		num_digits++;
+	}
+
+	for (int i = num_digits; i > 0; i--)
+	{
+		if (digits[i-1] != 0)	// We don't verbally say 0 in a number like 504
+		{
+			if (i == 2)	// Special case to handle ten place and teens
+			{
+				if (digits[1] == 1)		// Handles 10 and the teens
+				{
+					audio_file = TEN_AUDIO + digits[0];
+					i--;	// Prevents another loop iteration
+				}
+				else	// Handles 20, 30, 40, ...
+				{
+					audio_file = TWENTY_AUDIO + digits[1];
+				}
+			}
+			else	// Handles hundreds and ones (and every other place if we weren't stopping at 999)
+			{
+				audio_file = digits[i-1];
+			}
+
+			file_list[*file_list_size++] = audio_file;
+		}
+
+		if (*file_list_size > MAX_AUDIO_LIST_SIZE)
+		{
+			return;
+		}
+	}
+}
+
 
 
 EAudioPlayerStatus PlayerFSM_Prime(EAudioFile* file_list, uint8_t file_list_size, uint16_t* buf)

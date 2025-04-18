@@ -22,7 +22,7 @@ extern EMorseFSMState morse_fsm_state;
 
 const char* Generate_Morse(unsigned int num);
 
-void MorseFSM_Prime(const char* message);
+void MorseFSM_Prime(char* message);
 
 EMorseFSMState MorseFSM_Run();
 

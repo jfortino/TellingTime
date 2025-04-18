@@ -21,7 +21,7 @@ typedef enum
 	GET_DATE_DAY,
 	GET_DATE_FULL,
 	GET_HR,
-	GET_SPO2,
+	GET_PO,
 	VOL_UP,
 	VOL_DOWN,
 	VOL_MUTE,
@@ -29,10 +29,18 @@ typedef enum
 	MENU_UP,
 	MENU_DOWN,
 	MENU_SELECT,
+	MENU_HOME,
 	CHARGE_CYCLE_START,
 	CHARGE_CYCLE_END,
 	LOW_BATTERY_DETECT
 } EWatchEvent;
+
+typedef enum
+{
+	NOT_STARTED,
+	RUNNING,
+	FINISHED
+} EEventFlag;
 
 void EventQueue_Enqueue(EWatchEvent event);
 EWatchEvent EventQueue_Peek();

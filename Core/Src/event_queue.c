@@ -22,7 +22,7 @@ void EventQueue_Enqueue(EWatchEvent event)
 
 EWatchEvent EventQueue_Peek()
 {
-	return (queued_events > 0 ? event_queue[queued_events-1] : NO_EVENT);
+	return (queued_events > 0 ? event_queue[0] : NO_EVENT);
 }
 
 
@@ -32,6 +32,10 @@ EWatchEvent EventQueue_Dequeue()
 
 	if (queued_events > 0)
 	{
+		for (int i = 1; i < queued_events; i++)
+		{
+			event_queue[i-1] = event_queue[i];
+		}
 		queued_events--;
 	}
 

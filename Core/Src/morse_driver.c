@@ -19,27 +19,38 @@ static char* current_char;
 static uint8_t primed = 0;
 
 
-const char* Generate_Morse(unsigned int num)
+void generate_morse_number(char* morse_buffer, unsigned int num)
 {
-	char* morse = "";
 	int temp = num;
+	int digits[4];	// We should only ever have to work with 4 digit numbers
+	int num_digits = 0;
 
+	// Clears the morse string buffer
+	memset(morse_buffer, 0, MORSE_BUFFER_SIZE);
+
+	// Stores the digits of num into the digits array in ascending order (1s, 10s, 100s, etc.)
+	// Also counts the number of digits
 	while (temp > 0)
 	{
-		strcat(morse, MORSE_NUMBERS[temp % 10]);
+		digits[num_digits] = temp % 10;
 		temp /= 10;
+		num_digits++;
 	}
 
-	return (const char*) morse;
+	// Converts each digit into its morse code in reverse order (100s, 10s, 1s) and generates the morse string
+	for (int i = num_digits; i > 0; i--)
+	{
+		strcat(morse_buffer, MORSE_NUMBERS[digits[i-1]]);
+	}
 }
 
 
-void MorseFSM_Prime(const char* message)
+void MorseFSM_Prime(char* message)
 {
 	if (!primed)
 	{
 		morse_fsm_state = NEXT_CHAR;
-		current_char = (char*) message;
+		current_char = message;
 		wait_cycles = 1;
 		primed = 1;
 	}
