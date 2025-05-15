@@ -12,10 +12,16 @@
 
 const char AUDIO_FILENAMES[NUM_FILES][MAX_FILENAME_LENGTH] =
 {
-		"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-		"eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
-		"twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "hundred",
-		"AM", "PM", "BPM", "percent", "your", "is", "set", "time", "low_bat"
+		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",										// 0-9
+		"10", "11", "12", "13", "14", "15", "16", "17", "18", "19",								// 10-19
+		"20", "30", "40", "50", "60", "70", "80", "90", "hundred",								// tens and hundred
+		"sun", "mon", "tue", "wed", "thu", "fri", "sat",										// days of the week
+		"jan", "feb", "mar", "apr", "may", "june", "july", "aug", "sept", "oct", "nov", "dec",	// months
+		"date", "day", "month", "year",															// date stuff
+		"time", "am", "pm",	"minute", "hour",													// time stuff
+		"vibe", "length", "short", "medium", "long",														// vibration length
+		"hr", "bpm", "spo2", "percent",															// biosignal stuff
+		"your", "is", "set", "low", "battery", "format"											// misc
 };
 
 #endif

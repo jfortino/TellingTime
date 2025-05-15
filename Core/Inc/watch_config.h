@@ -8,8 +8,8 @@
 #ifndef INC_WATCH_CONFIG_H_
 #define INC_WATCH_CONFIG_H_
 
+
 //====================================================Misc====================================================
-//#define LOW_POWER_ENABLED
 #define DEBUG_TERMINAL
 
 #define SPI_FLASH
@@ -28,10 +28,10 @@
 #define AUDIO_BUFFER_SAMPLES 1024		// The number of samples per audio buffer for 1 audio channel
 #define NUM_AUDIO_BUFFERS 1				// The number of audio buffers (1 = single buffer, 2 = double buffering). Value should not exceed 2.
 										// NOTE: If NUM_AUDIO_BUFFERS == 1, the DMA must be set to "Normal" mode
-#define MAX_AUDIO_LIST_SIZE 10
+#define MAX_AUDIO_LIST_SIZE 20
 
 #define VIBRATION
-#define MORSE_BUFFER_SIZE 15
+#define MAX_MORSE_BUFFER_SIZE 15
 #define DOT_LENGTH 2		// The number of timer overflow lengths in a dot
 #define DASH_LENGTH 5		// The number of timer overflow lengths in a dash
 #define SPACE_LENGTH 5		// The number of timer overflow lengths between numbers
@@ -39,10 +39,13 @@
 
 
 //=================================================Biosignals=================================================
-#define BIOSIGNALS
+//#define HEARTRATE
+//#define PULSE_OX
 #define SPO2_TIMEOUT 100
-#define HR_SAMPLE_NUM 3200
-#define SPO2_SAMPLE_NUM 1
+#define HR_SAMPLE_NUM 2000
+#define SPO2_SAMPLE_NUM 5
+#define FIR_FILTER_TAPS 66
+#define IIR_FILTER_STAGES 4
 
 
 //================================================Time Keeping================================================
@@ -86,6 +89,15 @@ typedef enum
 	AUDIO_MODE,
 	VIBRATION_MODE
 } EFeedbackMode;
+
+
+//==============================================Battery Management============================================
+//#define MEASURE_BATT
+#define BATT_MEASURE_SAMPLES 6
+
+#define CHARGING_MONITOR
+
+//#define LOW_POWER_MODE
 
 #endif /* USB_DRIVE */
 #endif /* INC_WATCH_CONFIG_H_ */

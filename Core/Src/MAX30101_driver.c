@@ -7,13 +7,12 @@
  */
 
 #include "watch_config.h"
-#ifdef BIOSIGNALS
+#if defined(HEARTRATE) || defined(PULSE_OX)
 
 #include "MAX30101_driver.h"
 #include <string.h>
 
 static I2C_HandleTypeDef* hi2c;
-static uint8_t measurement_data[192];
 static uint8_t num_active_leds = 0;
 static uint8_t adc_bit_resolution = 0;
 uint8_t current_sample_index = 0;
@@ -121,11 +120,14 @@ ESPO2Status SPO2_StartMeasurement(ESPO2MeasurementType measurement_type)
 	spo2_status |= SPO2_WriteRegister(OVF_COUNTER_REG, ENTIRE_REG_MASK, CLEAR_BITS);
 
 	// Allows us to set different sample rates for HR and SPO2 Measurements
-	spo2_status |= SPO2_WriteRegister(SPO2_CONFIG_REG, SPO2_SR_MASK, (measurement_type == MEASURE_HR) ? SR_400 : SR_100);
+	spo2_status |= SPO2_WriteRegister(SPO2_CONFIG_REG, SPO2_SR_MASK, (measurement_type == MEASURE_HR) ? SR_400 : SR_400);
 	// Enables Green LED time slot if we are taking an SPO2 measurement, else it disables the time slot
 	spo2_status |= SPO2_WriteRegister(SLOT_1_2_REG, SLOTx_MASK(2), (measurement_type == MEASURE_SPO2) ? SLOTx_GREEN(2) : CLEAR_BITS);
 
 	num_active_leds = (measurement_type == MEASURE_HR ? 1 : 2);
+
+	uint8_t dummy;
+	spo2_status |=  SPO2_ReadRegister(INT_STATUS_1_REG, &dummy, REG_DATA_SIZE);		// Clears the PWR_RDY interrupt
 
 	// Starts the measurement
 	spo2_status |= SPO2_WriteRegister(MODE_CONFIG_REG, SHDN_MASK, CLEAR_BITS);
@@ -230,9 +232,19 @@ ESPO2Status SPO2_ReleaseShutDown()
 */
 
 
-ESPO2Status SPO2_Reset()
+ESPO2Status SPO2_ResetDevice()
 {
-	return SPO2_WriteRegister(MODE_CONFIG_REG, RESET_MASK, SET_BITS);
+	if (SPO2_WriteRegister(MODE_CONFIG_REG, SHDN_MASK, CLEAR_BITS))
+	{
+		return SPO2_ERROR;
+	}
+
+	if (SPO2_WriteRegister(MODE_CONFIG_REG, RESET_MASK, SET_BITS))
+	{
+		return SPO2_ERROR;
+	}
+
+	return SPO2_OK;
 }
 
 

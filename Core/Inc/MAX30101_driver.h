@@ -164,7 +164,7 @@ ESPO2Status SPO2_StopMeasurement();
 ESPO2Status SPO2_ReadNewFIFOData();
 ESPO2Status SPO2_ShutDown();
 ESPO2Status SPO2_ReleaseShutDown();
-ESPO2Status SPO2_Reset();
+ESPO2Status SPO2_ResetDevice();
 ESPO2Status SPO2_ReadInterrupts(uint8_t interrupts[5], uint8_t* num_interrupts);
 uint32_t SPO2_GetSample(uint8_t led_num, uint8_t sample_num);
 

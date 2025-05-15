@@ -17,16 +17,13 @@ EMorseFSMState morse_fsm_state;
 static uint8_t wait_cycles;
 static char* current_char;
 static uint8_t primed = 0;
+static uint8_t length_multiplyer = 1;
 
-
-void generate_morse_number(char* morse_buffer, unsigned int num)
+void generate_number_morse(char* morse_buffer, unsigned int num)
 {
 	int temp = num;
 	int digits[4];	// We should only ever have to work with 4 digit numbers
 	int num_digits = 0;
-
-	// Clears the morse string buffer
-	memset(morse_buffer, 0, MORSE_BUFFER_SIZE);
 
 	// Stores the digits of num into the digits array in ascending order (1s, 10s, 100s, etc.)
 	// Also counts the number of digits
@@ -45,12 +42,13 @@ void generate_morse_number(char* morse_buffer, unsigned int num)
 }
 
 
-void MorseFSM_Prime(char* message)
+void MorseFSM_Prime(char* message, uint8_t multiplyer)
 {
 	if (!primed)
 	{
 		morse_fsm_state = NEXT_CHAR;
 		current_char = message;
+		length_multiplyer = multiplyer;
 		wait_cycles = 1;
 		primed = 1;
 	}
@@ -68,17 +66,17 @@ EMorseFSMState MorseFSM_Run()
 				{
 					case '.':
 						morse_fsm_state = DOT;
-						wait_cycles = DOT_LENGTH;
+						wait_cycles = DOT_LENGTH * length_multiplyer;
 						break;
 
 					case '-':
 						morse_fsm_state = DASH;
-						wait_cycles = DASH_LENGTH;
+						wait_cycles = DASH_LENGTH * length_multiplyer;
 						break;
 
 					case ' ':
 						morse_fsm_state = SPACE;
-						wait_cycles = SPACE_LENGTH;
+						wait_cycles = SPACE_LENGTH * length_multiplyer;
 						break;
 
 					default:

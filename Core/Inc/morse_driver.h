@@ -5,6 +5,8 @@
  *  Author: Joseph Fortino
  */
 
+#include <stdint.h>
+
 #ifndef INC_MORSE_DRIVER_H_
 #define INC_MORSE_DRIVER_H_
 
@@ -22,7 +24,7 @@ extern EMorseFSMState morse_fsm_state;
 
 const char* Generate_Morse(unsigned int num);
 
-void MorseFSM_Prime(char* message);
+void MorseFSM_Prime(char* message, uint8_t multiplyer);
 
 EMorseFSMState MorseFSM_Run();
 

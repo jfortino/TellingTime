@@ -36,7 +36,23 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef enum
+{
+	MENU_IDLE,
+	MENU_SET_TIME,
+	MENU_SET_DATE,
+	MENU_FORMAT_TIME,
+	MENU_FORMAT_DATE,
+	MENU_SET_VIB_LEN,
+	MENU_SET_HOUR,
+	MENU_SET_MINUTE,
+	MENU_SET_FORMAT_TIME,
+	MENU_SET_FORMAT_DATE,
+	MENU_CHANGE_VIB_LENGTH,
+	MENU_SET_DAY,
+	MENU_SET_MONTH,
+	MENU_SET_YEAR
+} EMenuFSMState;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

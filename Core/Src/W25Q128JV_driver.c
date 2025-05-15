@@ -38,11 +38,6 @@ EFlashStatus Flash_Init(SPI_HandleTypeDef* SPI, GPIO_TypeDef* GPIOx, uint16_t GP
 	cs_pin_port = GPIOx;
 	cs_pin_num = GPIO_Pin;
 
-	if (Flash_PowerDown() != FLASH_OK)	// Starts flash in power down mode
-	{
-		return FLASH_ERROR;
-	}
-
 	return FLASH_OK;
 }
 

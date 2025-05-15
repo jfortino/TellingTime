@@ -36,7 +36,7 @@ static void interleave_zeros(uint16_t* buf)
 
 
 
-void generate_number_audio(EAudioFile* file_list, uint8_t* file_list_size, unsigned int num)
+void generate_number_audio(EAudioFile* file_list, uint8_t* file_list_size, unsigned int num, uint8_t leading_zero)
 {
 	EAudioFile audio_file;
 
@@ -59,9 +59,15 @@ void generate_number_audio(EAudioFile* file_list, uint8_t* file_list_size, unsig
 		num_digits++;
 	}
 
+
+	if (num_digits == 0 || (num_digits == 1 && leading_zero))
+	{
+		file_list[(*file_list_size)++] = ZERO_AUDIO;
+	}
+
 	for (int i = num_digits; i > 0; i--)
 	{
-		if (digits[i-1] != 0)	// We don't verbally say 0 in a number like 504
+		if (digits[i-1] != 0)	// We don't verbally say 0 in a number (like 504) unless it's a time
 		{
 			if (i == 2)	// Special case to handle ten place and teens
 			{
@@ -72,7 +78,7 @@ void generate_number_audio(EAudioFile* file_list, uint8_t* file_list_size, unsig
 				}
 				else	// Handles 20, 30, 40, ...
 				{
-					audio_file = TWENTY_AUDIO + digits[1];
+					audio_file = TWENTY_AUDIO + digits[1] - 2;
 				}
 			}
 			else	// Handles hundreds and ones (and every other place if we weren't stopping at 999)
@@ -80,7 +86,12 @@ void generate_number_audio(EAudioFile* file_list, uint8_t* file_list_size, unsig
 				audio_file = digits[i-1];
 			}
 
-			file_list[*file_list_size++] = audio_file;
+			file_list[(*file_list_size)++] = audio_file;
+
+			if (i == 3)
+			{
+				file_list[(*file_list_size)++] = HUNDRED_AUDIO;
+			}
 		}
 
 		if (*file_list_size > MAX_AUDIO_LIST_SIZE)
@@ -144,6 +155,7 @@ EAudioPlayerStatus PlayerFSM_Run()
 				// Copies the next chunk of data from the file into the audio buffer
 				if (f_read(&USERFile, buffer_pointer, bytes_to_read, &br) != FR_OK)
 				{
+					primed = 0;
 					return AUDIOPLAYER_ERROR;
 				}
 
@@ -164,6 +176,7 @@ EAudioPlayerStatus PlayerFSM_Run()
 				// Closes the file
 				if (f_close(&USERFile) != FR_OK)
 				{
+					primed = 0;
 					return AUDIOPLAYER_ERROR;
 				}
 
@@ -180,6 +193,7 @@ EAudioPlayerStatus PlayerFSM_Run()
 					// Unmounts the file system since we are done using it
 					if (f_mount(NULL, USERPath, 1) != FR_OK)
 					{
+						primed = 0;
 						return AUDIOPLAYER_ERROR;
 					}
 
@@ -194,12 +208,14 @@ EAudioPlayerStatus PlayerFSM_Run()
 				// Checks if the next file in the list exists
 				if (f_stat(audio_file_name, NULL) != FR_OK)
 				{
+					primed = 0;
 					return AUDIOPLAYER_ERROR;
 				}
 
 				// Opens the next file in the list
 				if (f_open(&USERFile, audio_file_name, FA_READ) != FR_OK)
 				{
+					primed = 0;
 					return AUDIOPLAYER_ERROR;
 				}
 

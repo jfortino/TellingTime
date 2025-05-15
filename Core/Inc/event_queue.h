@@ -32,7 +32,7 @@ typedef enum
 	MENU_HOME,
 	CHARGE_CYCLE_START,
 	CHARGE_CYCLE_END,
-	LOW_BATTERY_DETECT
+	LOW_BATT_DETECT
 } EWatchEvent;
 
 typedef enum

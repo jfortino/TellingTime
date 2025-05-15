@@ -98,7 +98,7 @@ EWatchEvent Button_GetWatchEvent()
 			break;
 
 		case MENU_SELECT_BTN:
-			watch_event = MENU_SELECT;
+			watch_event = (button_state == SHORT_PRESS ? MENU_SELECT : MENU_HOME);
 			break;
 
 		default:

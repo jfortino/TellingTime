@@ -58,7 +58,9 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern ADC_HandleTypeDef hadc;
 extern DMA_HandleTypeDef hdma_spi2_tx;
+extern RTC_HandleTypeDef hrtc;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim21;
 extern TIM_HandleTypeDef htim22;
@@ -92,7 +94,16 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+  #ifdef SPI_FLASH
+  Flash_ReleasePowerDown();
+  Flash_ResetDevice();
+  #endif
 
+  #ifdef BIOSIGNALS
+  SPO2_ResetDevice();
+  #endif
+
+  NVIC_SystemReset();
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -147,6 +158,20 @@ void SysTick_Handler(void)
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32l0xx.s).                    */
 /******************************************************************************/
+
+/**
+  * @brief This function handles RTC global interrupt through EXTI lines 17, 19 and 20 and LSE CSS interrupt through EXTI line 19.
+  */
+void RTC_IRQHandler(void)
+{
+  /* USER CODE BEGIN RTC_IRQn 0 */
+
+  /* USER CODE END RTC_IRQn 0 */
+  HAL_RTC_AlarmIRQHandler(&hrtc);
+  /* USER CODE BEGIN RTC_IRQn 1 */
+
+  /* USER CODE END RTC_IRQn 1 */
+}
 
 /**
   * @brief This function handles EXTI line 0 and line 1 interrupts.
@@ -210,6 +235,20 @@ void DMA1_Channel4_5_6_7_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 1 */
 
   /* USER CODE END DMA1_Channel4_5_6_7_IRQn 1 */
+}
+
+/**
+  * @brief This function handles ADC, COMP1 and COMP2 interrupts (COMP interrupts through EXTI lines 21 and 22).
+  */
+void ADC1_COMP_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADC1_COMP_IRQn 0 */
+
+  /* USER CODE END ADC1_COMP_IRQn 0 */
+  HAL_ADC_IRQHandler(&hadc);
+  /* USER CODE BEGIN ADC1_COMP_IRQn 1 */
+
+  /* USER CODE END ADC1_COMP_IRQn 1 */
 }
 
 /**

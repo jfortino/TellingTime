@@ -7,15 +7,14 @@
 
 #include "event_queue.h"
 
-static EWatchEvent event_queue[EVENT_QUEUE_SIZE];
-static uint8_t queued_events = 0;
+static volatile EWatchEvent event_queue[EVENT_QUEUE_SIZE];
+static volatile uint8_t queued_events = 0;
 
 void EventQueue_Enqueue(EWatchEvent event)
 {
 	if (queued_events < EVENT_QUEUE_SIZE)
 	{
-		event_queue[queued_events] = event;
-		queued_events++;
+		event_queue[queued_events++] = event;
 	}
 }
 
